@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
 
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 import uvicorn
 
 from app.api.routes import router
@@ -31,6 +32,22 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api/v1")
+
+
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/api/v1/health")
+
+
+@app.get("/health")
+async def health_redirect():
+    from app.api.routes import router as r
+    return {"status": "ok", "service": "MarketAtlas Chat"}
+
+
+@app.get("/api/v1")
+async def api_root():
+    return {"service": "MarketAtlas Chat API", "version": "1.0.0", "endpoints": ["/chat", "/chat/stream", "/health", "/history", "/memory/{id}", "/knowledge/search", "/graph/{entity}"]}
 
 
 @app.websocket("/ws")
