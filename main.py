@@ -1,5 +1,8 @@
 import sys
+import warnings
 from pathlib import Path
+
+warnings.filterwarnings("ignore", category=UserWarning, module="qdrant_client")
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
@@ -40,5 +43,5 @@ if __name__ == "__main__":
         "main:app",
         host=settings.api_host,
         port=settings.api_port,
-        reload=True,
+        reload=False,
     )
