@@ -274,6 +274,8 @@ def execute_direct(state: AgentState) -> AgentState:
             r = simulation_agent.process(state["query"], state.get("_context"))
         elif agent_name == "ReportAgent":
             r = report_agent.process(state["query"], state.get("_context"))
+        elif agent_name == "EventSimilarityAgent":
+            r = event_similarity_agent.process(state["query"], state.get("_context"))
         else:
             continue
         state["agent_responses"][agent_name] = r["response"]
