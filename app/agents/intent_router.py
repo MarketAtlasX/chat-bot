@@ -18,6 +18,7 @@ class IntentRouter:
             IntentType.SIMULATION: ["simulate", "what if", "scenario", "if happens", "if occurs", "what would"],
             IntentType.GRAPH: ["relationship", "connection", "how is", "related to", "linked to", "network", "graph", "connection between"],
             IntentType.REPORT: ["report", "brief", "analysis", "summary", "deep dive", "intelligence report", "overview"],
+            IntentType.SIMILARITY: ["similar", "historical parallels", "analogous", "comparable", "like what happened", "resemble", "past events like", "historical analog", "history repeats", "what past event", "how is this like", "previous crisis like", "similar events"],
         }
 
         scores = {}
@@ -37,6 +38,7 @@ Categories:
 - SIMULATION: What-if scenarios, hypothetical situations
 - GRAPH: Entity relationships, connections, network queries
 - REPORT: Comprehensive analysis, briefings, intelligence reports
+- SIMILARITY: Finding similar historical events, historical parallels, analogies to past events, what past events are like the current situation
 
 Query: {query}
 
@@ -60,5 +62,6 @@ Category:"""
             IntentType.SIMULATION: ["SimulationAgent", "ImpactAgent"],
             IntentType.GRAPH: ["GraphAgent", "NewsAgent"],
             IntentType.REPORT: ["ReportAgent", "ImpactAgent", "MarketAgent", "GraphAgent", "NewsAgent"],
+            IntentType.SIMILARITY: ["EventSimilarityAgent", "ImpactAgent"],
         }
         return routing.get(intent, ["ImpactAgent"])
