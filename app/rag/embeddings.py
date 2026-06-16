@@ -1,4 +1,12 @@
 import os
+
+CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".cache")
+os.environ.setdefault("HF_HOME", os.path.join(CACHE_DIR, "huggingface"))
+os.environ.setdefault("TRANSFORMERS_CACHE", os.path.join(CACHE_DIR, "huggingface", "transformers"))
+os.environ.setdefault("TORCH_HOME", os.path.join(CACHE_DIR, "torch"))
+os.environ.setdefault("SENTENCE_TRANSFORMERS_HOME", os.path.join(CACHE_DIR, "sentence_transformers"))
+os.makedirs(CACHE_DIR, exist_ok=True)
+
 os.environ["HF_HUB_OFFLINE"] = "1"
 
 import numpy as np
@@ -16,14 +24,11 @@ class BGEMModel:
         if self._load_attempted:
             return
         self._load_attempted = True
-        import requests
-        try:
-            requests.get("http://localhost:11434/api/tags", timeout=1)
-        except Exception:
-            pass
         try:
             from sentence_transformers import SentenceTransformer
-            self._model = SentenceTransformer(self.model_name, device="cpu", trust_remote_code=True)
+            self._model = SentenceTransformer(
+                self.model_name, device="cpu", trust_remote_code=True
+            )
         except Exception:
             self._model = None
 
