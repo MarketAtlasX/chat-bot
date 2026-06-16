@@ -14,8 +14,10 @@ from app.agents.graph_agent import GraphAgent
 from app.agents.simulation_agent import SimulationAgent
 from app.agents.recommendation_agent import RecommendationAgent
 from app.agents.report_agent import ReportAgent
+from app.agents.event_similarity_agent import EventSimilarityAgent
 from app.models import IntentType
 from app.rag.retriever import seed_knowledge_base
+from app.event_memory.event_store import event_store
 
 
 class TestIntentRouter:
@@ -50,6 +52,51 @@ class TestIntentRouter:
         intent, conf = self.router.classify("Generate an intelligence report on Taiwan")
         assert intent == IntentType.REPORT
         assert conf > 0.5
+
+    def test_similarity_intent(self):
+        intent, conf = self.router.classify("What historical events are similar to the current Iran-Israel tensions?")
+        assert intent == IntentType.SIMILARITY
+        assert conf > 0.5
+
+    def test_similarity_intent_alt(self):
+        intent, conf = self.router.classify("Find past events like the Russia-Ukraine war")
+        assert intent == IntentType.SIMILARITY
+        assert conf > 0.5
+
+
+class TestEventSimilarityAgent:
+    def setup_method(self):
+        self.agent = EventSimilarityAgent()
+
+    def test_process_returns_formatted_response(self):
+        result = self.agent.process("Iran-Israel tensions in the Middle East affecting oil markets")
+        assert result["agent"] == "EventSimilarityAgent"
+        assert "response" in result
+        assert len(result["response"]) > 0
+        assert "Historical Event Similarity" in result["response"]
+
+    def test_similarity_engine_finds_matching_events(self):
+        results = event_store.find_similar(
+            query_text="Iran-Israel military conflict in the Middle East",
+            query_entities=["Iran", "Israel", "Middle East"],
+            query_sectors=["Energy", "Defense"],
+            top_k=3,
+        )
+        assert len(results) > 0
+        for r in results:
+            assert 0 <= r.similarity_score <= 1
+            assert r.event.name
+
+    def test_aggregated_outcomes(self):
+        results = event_store.find_similar(
+            query_text="Oil supply disruption in the Middle East due to conflict",
+            top_k=3,
+        )
+        response = event_store.build_response("test", results)
+        assert len(response.similar_events) > 0
+        if response.aggregated_outcomes:
+            for sector, impact in response.aggregated_outcomes.items():
+                assert isinstance(impact, (int, float))
 
 
 class TestNewsAgent:
