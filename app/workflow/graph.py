@@ -34,6 +34,7 @@ class AgentState(dict):
     final_response: str
     confidence: float
     error: str
+    _context: dict[str, Any]
 
 
 router = IntentRouter()
@@ -115,6 +116,12 @@ def execute_market(state: AgentState) -> AgentState:
     state["agent_responses"]["MarketAgent"] = result["response"]
     if "market_data" in result:
         state["_context"]["market_data"] = result["market_data"]
+    if "explanations" in result:
+        state["_context"]["explanations"] = state["_context"].get("explanations", {})
+        state["_context"]["explanations"]["MarketAgent"] = result["explanations"]
+    if "explanation_text" in result:
+        state["_context"]["explanation_texts"] = state["_context"].get("explanation_texts", {})
+        state["_context"]["explanation_texts"]["MarketAgent"] = result["explanation_text"]
     state["final_response"] = result["response"]
     return state
 
@@ -125,6 +132,12 @@ def execute_impact(state: AgentState) -> AgentState:
     state["agent_responses"]["ImpactAgent"] = result["response"]
     state["_context"]["impact_analysis"] = result["response"]
     state["sources"].extend(result.get("sources", []))
+    if "explanations" in result:
+        state["_context"]["explanations"] = state["_context"].get("explanations", {})
+        state["_context"]["explanations"]["ImpactAgent"] = result["explanations"]
+    if "explanation_text" in result:
+        state["_context"]["explanation_texts"] = state["_context"].get("explanation_texts", {})
+        state["_context"]["explanation_texts"]["ImpactAgent"] = result["explanation_text"]
     state["final_response"] = result["response"]
     return state
 
@@ -142,6 +155,12 @@ def execute_forecast(state: AgentState) -> AgentState:
     _ensure_context(state)
     result = forecast_agent.process(state["query"], state.get("_context"))
     state["agent_responses"]["ForecastAgent"] = result["response"]
+    if "explanations" in result:
+        state["_context"]["explanations"] = state["_context"].get("explanations", {})
+        state["_context"]["explanations"]["ForecastAgent"] = result["explanations"]
+    if "explanation_text" in result:
+        state["_context"]["explanation_texts"] = state["_context"].get("explanation_texts", {})
+        state["_context"]["explanation_texts"]["ForecastAgent"] = result["explanation_text"]
     state["final_response"] = result["response"]
     return state
 
@@ -191,26 +210,33 @@ def execute_similarity_pipeline(state: AgentState) -> AgentState:
     state["agent_responses"]["EventSimilarityAgent"] = sim_result["response"]
     state["sources"].append("Event Memory Database")
     sim_data = sim_result.get("similarity_data", {})
+    sim_expl = sim_result.get("explanation_text", "")
 
     impact_result = impact_agent.process(state["query"], state.get("_context"))
     state["agent_responses"]["ImpactAgent"] = impact_result["response"]
     state["_context"]["impact_analysis"] = impact_result["response"]
     state["sources"].extend(impact_result.get("sources", []))
+    impact_expl = impact_result.get("explanation_text", "")
 
     forecast_result = forecast_agent.process(state["query"], state.get("_context"))
     state["agent_responses"]["ForecastAgent"] = forecast_result["response"]
+    forecast_expl = forecast_result.get("explanation_text", "")
 
     report_result = report_agent.process(state["query"], state.get("_context"))
     state["agent_responses"]["ReportAgent"] = report_result["response"]
     state["sources"].extend(report_result.get("sources", []))
 
     state["_context"]["similarity_data"] = sim_data
+    combined_expl = sim_expl
+    if impact_expl:
+        combined_expl = combined_expl + "\n\n" + impact_expl if combined_expl else impact_expl
     state["final_response"] = event_similarity_agent.format_full_report(
         state["query"], sim_data,
         news_result["response"],
         impact_result["response"],
         forecast_result["response"],
         report_result["response"],
+        explanation_text=combined_expl,
     )
 
     state["agents_used"] = [
@@ -363,4 +389,5 @@ async def run_chat(query: str, conversation_id: str = None, user_id: str = "defa
         agents_used=result.get("agents_used", []),
         confidence=result.get("confidence", 0.5),
         sources=list(set(result.get("sources", []))),
+        explanations=result.get("_context", {}).get("explanations"),
     )
