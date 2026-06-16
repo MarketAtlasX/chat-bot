@@ -3,6 +3,18 @@ from ..models import IntentType
 from ..llm.ollama import get_llm
 
 
+INTENT_DESCRIPTIONS = {
+    IntentType.NEWS: "Current events, news, updates, developments",
+    IntentType.MARKET: "Market data, prices, trading, stocks, movements",
+    IntentType.IMPACT: "Geopolitical impact analysis, consequences, effects",
+    IntentType.RECOMMENDATION: "Investment advice, buying/selling suggestions",
+    IntentType.SIMULATION: "What-if scenarios, hypothetical situations",
+    IntentType.GRAPH: "Entity relationships, connections, network queries",
+    IntentType.REPORT: "Comprehensive analysis, briefings, intelligence reports",
+    IntentType.SIMILARITY: "Historical parallels, analogies to past events, similar situations",
+}
+
+
 class IntentRouter:
     def __init__(self):
         self.llm = get_llm()
@@ -52,6 +64,9 @@ Category:"""
         best_intent = max(scores, key=scores.get)
         confidence = min(0.5 + (scores[best_intent] * 0.15), 0.95)
         return best_intent, confidence
+
+    def list_intents(self) -> dict[str, str]:
+        return {k.value: v for k, v in INTENT_DESCRIPTIONS.items()}
 
     def get_agents_for_intent(self, intent: IntentType) -> list[str]:
         routing = {
