@@ -112,6 +112,18 @@ class SHAPExplainer(BaseExplainer):
 
         return contributions
 
+    @staticmethod
+    def format_prediction_line(prediction: str, ticker: str = "") -> str:
+        if ticker:
+            return f"**{ticker}:** {prediction}"
+        return f"**Market:** {prediction}"
+
+    @staticmethod
+    def format_contribution_bar(impact_pct: float, width: int = 20) -> str:
+        bar_len = min(int(abs(impact_pct) * 2), width)
+        bar = "█" * bar_len + "░" * (width - bar_len)
+        return bar
+
     def format_for_display(self, contributions: list[FeatureContribution], prediction_pct: float) -> str:
         lines = []
         lines.append("Prediction:")
