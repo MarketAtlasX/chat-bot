@@ -9,6 +9,9 @@ from ..rag.vector_store import search_knowledge
 from ..knowledge.neo4j_client import Neo4jClient
 from ..event_memory.event_store import event_store
 from ..event_memory.event_schema import HistoricalEvent
+from ..explain.shap_explainer import SHAPExplainer
+from ..explain.attention_explainer import AttentionExplainer
+from ..explain.graph_explainer import GraphExplainer
 
 router = APIRouter()
 
@@ -136,6 +139,39 @@ async def get_event(event_id: str):
 async def add_event(event: HistoricalEvent):
     event_store.add_event(event)
     return {"status": "added", "event_id": event.id, "name": event.name}
+
+
+@router.post("/explain/shap")
+async def explain_shap(query: str, prediction: str = ""):
+    explainer = SHAPExplainer()
+    result = explainer.explain(prediction=prediction, context={"query": query})
+    shap = result.shap
+    if shap:
+        return shap.model_dump()
+    return {"prediction": prediction, "contributions": []}
+
+
+@router.post("/explain/attention")
+async def explain_attention(query: str, entities: str = "", sectors: str = ""):
+    explainer = AttentionExplainer()
+    entity_list = [e.strip() for e in entities.split(",") if e.strip()] if entities else []
+    sector_list = [s.strip() for s in sectors.split(",") if s.strip()] if sectors else []
+    result = explainer.explain(context={"query": query, "entities": entity_list, "sectors": sector_list})
+    attn = result.attention
+    if attn:
+        return attn.model_dump()
+    return {"query": query, "top_events": [], "top_features": []}
+
+
+@router.post("/explain/graph")
+async def explain_graph(query: str, entities: str = ""):
+    explainer = GraphExplainer()
+    entity_list = [e.strip() for e in entities.split(",") if e.strip()] if entities else []
+    result = explainer.explain(context={"query": query, "entities": entity_list})
+    graph = result.graph
+    if graph:
+        return graph.model_dump()
+    return {"start_entity": "", "path": []}
 
 
 @router.get("/health")
