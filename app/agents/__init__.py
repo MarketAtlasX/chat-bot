@@ -8,6 +8,7 @@ from .recommendation_agent import RecommendationAgent
 from .report_agent import ReportAgent
 from .simulation_agent import SimulationAgent
 from .debate_agent import DebateAgent
+from .event_similarity_agent import EventSimilarityAgent
 
 __all__ = [
     "IntentRouter",
@@ -20,4 +21,5 @@ __all__ = [
     "ReportAgent",
     "SimulationAgent",
     "DebateAgent",
+    "EventSimilarityAgent",
 ]
