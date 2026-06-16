@@ -15,6 +15,7 @@ from ..agents import (
     ReportAgent,
     SimulationAgent,
     DebateAgent,
+    EventSimilarityAgent,
 )
 from ..memory.short_term import short_term_memory
 from ..memory.long_term import long_term_memory
@@ -45,6 +46,7 @@ recommendation_agent = RecommendationAgent()
 report_agent = ReportAgent()
 simulation_agent = SimulationAgent()
 debate_agent = DebateAgent()
+event_similarity_agent = EventSimilarityAgent()
 
 
 def route_intent(state: AgentState) -> AgentState:
@@ -62,13 +64,15 @@ def route_intent(state: AgentState) -> AgentState:
     return state
 
 
-def decide_agents(state: AgentState) -> Literal["debate", "report", "execute_debate", "execute_report", "execute_direct", "execute_news", "execute_market", "execute_impact", "execute_graph", "execute_forecast", "execute_recommendation", "execute_simulation"]:
+def decide_agents(state: AgentState) -> Literal["debate", "report", "execute_debate", "execute_report", "execute_direct", "execute_news", "execute_market", "execute_impact", "execute_graph", "execute_forecast", "execute_recommendation", "execute_simulation", "execute_similarity", "execute_similarity_pipeline"]:
     intent = state["intent"]
 
     if intent == IntentType.REPORT:
         return "execute_report"
     if intent == IntentType.SIMULATION:
         return "execute_simulation"
+    if intent == IntentType.SIMILARITY:
+        return "execute_similarity_pipeline"
 
     if intent == IntentType.NEWS:
         return "execute_news"
@@ -113,12 +117,6 @@ def execute_market(state: AgentState) -> AgentState:
         state["_context"]["market_data"] = result["market_data"]
     state["final_response"] = result["response"]
     return state
-    if "_context" not in state:
-        state["_context"] = {}
-    if "agent_responses" not in state:
-        state["agent_responses"] = {}
-    if "sources" not in state:
-        state["sources"] = []
 
 
 def execute_impact(state: AgentState) -> AgentState:
@@ -170,6 +168,55 @@ def execute_report(state: AgentState) -> AgentState:
     state["agent_responses"]["ReportAgent"] = result["response"]
     state["final_response"] = result["response"]
     state["sources"].extend(result.get("sources", []))
+    return state
+
+
+def execute_similarity(state: AgentState) -> AgentState:
+    _ensure_context(state)
+    result = event_similarity_agent.process(state["query"], state.get("_context"))
+    state["agent_responses"]["EventSimilarityAgent"] = result["response"]
+    state["final_response"] = result["response"]
+    state["sources"].append("Event Memory Database")
+    return state
+
+
+def execute_similarity_pipeline(state: AgentState) -> AgentState:
+    _ensure_context(state)
+
+    news_result = news_agent.process(state["query"], state.get("_context"))
+    state["agent_responses"]["NewsAgent"] = news_result["response"]
+    state["sources"].extend(news_result.get("sources", []))
+
+    sim_result = event_similarity_agent.process(state["query"], state.get("_context"))
+    state["agent_responses"]["EventSimilarityAgent"] = sim_result["response"]
+    state["sources"].append("Event Memory Database")
+    sim_data = sim_result.get("similarity_data", {})
+
+    impact_result = impact_agent.process(state["query"], state.get("_context"))
+    state["agent_responses"]["ImpactAgent"] = impact_result["response"]
+    state["_context"]["impact_analysis"] = impact_result["response"]
+    state["sources"].extend(impact_result.get("sources", []))
+
+    forecast_result = forecast_agent.process(state["query"], state.get("_context"))
+    state["agent_responses"]["ForecastAgent"] = forecast_result["response"]
+
+    report_result = report_agent.process(state["query"], state.get("_context"))
+    state["agent_responses"]["ReportAgent"] = report_result["response"]
+    state["sources"].extend(report_result.get("sources", []))
+
+    state["_context"]["similarity_data"] = sim_data
+    state["final_response"] = event_similarity_agent.format_full_report(
+        state["query"], sim_data,
+        news_result["response"],
+        impact_result["response"],
+        forecast_result["response"],
+        report_result["response"],
+    )
+
+    state["agents_used"] = [
+        "NewsAgent", "EventSimilarityAgent", "ImpactAgent",
+        "ForecastAgent", "ReportAgent",
+    ]
     return state
 
 
@@ -238,6 +285,8 @@ def build_workflow() -> StateGraph:
     workflow.add_node("execute_recommendation", execute_recommendation)
     workflow.add_node("execute_simulation", execute_simulation)
     workflow.add_node("execute_report", execute_report)
+    workflow.add_node("execute_similarity", execute_similarity)
+    workflow.add_node("execute_similarity_pipeline", execute_similarity_pipeline)
     workflow.add_node("execute_debate", execute_debate)
     workflow.add_node("execute_direct", execute_direct)
     workflow.add_node("calculate_confidence", calculate_confidence)
@@ -253,6 +302,8 @@ def build_workflow() -> StateGraph:
             "report": "execute_report",
             "execute_debate": "execute_debate",
             "execute_report": "execute_report",
+            "execute_similarity": "execute_similarity",
+            "execute_similarity_pipeline": "execute_similarity_pipeline",
             "execute_direct": "execute_direct",
             "execute_news": "execute_news",
             "execute_market": "execute_market",
@@ -267,7 +318,7 @@ def build_workflow() -> StateGraph:
     execution_nodes = [
         "execute_news", "execute_market", "execute_impact", "execute_graph",
         "execute_forecast", "execute_recommendation", "execute_simulation",
-        "execute_report", "execute_debate", "execute_direct",
+        "execute_report", "execute_similarity", "execute_similarity_pipeline", "execute_debate", "execute_direct",
     ]
     for node in execution_nodes:
         workflow.add_edge(node, "calculate_confidence")
