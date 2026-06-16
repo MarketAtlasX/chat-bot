@@ -4,11 +4,15 @@ from ..llm.ollama import get_llm
 from ..rag.retriever import retrieve_context
 from ..event_memory.event_store import event_store
 from ..event_memory.event_schema import SimilarityResponse
+from ..explain.attention_explainer import AttentionExplainer
+from ..explain.graph_explainer import GraphExplainer
 
 
 class EventSimilarityAgent:
     def __init__(self):
         self.llm = get_llm()
+        self.attention = AttentionExplainer()
+        self.graph_explainer = GraphExplainer()
 
     def process(self, query: str, context: dict[str, Any] = None) -> dict[str, Any]:
         entities = self._extract_entities(query)
@@ -22,14 +26,24 @@ class EventSimilarityAgent:
         )
 
         response = event_store.build_response(query, similar_events, top_k=3)
-
         formatted = self._format_response(response, query)
+
+        ctx = context or {}
+        ctx.update({"query": query, "entities": entities, "sectors": sectors, "similar_events": similar_events})
+        attn_result = self.attention.explain(context=ctx)
+        graph_result = self.graph_explainer.explain(context=ctx)
+        attn_formatted = self.attention.format_explanation(attn_result)
 
         return {
             "agent": "EventSimilarityAgent",
             "response": formatted,
             "similarity_data": response.model_dump() if hasattr(response, 'model_dump') else response,
             "entities": entities,
+            "explanations": {
+                "attention": attn_result.attention.model_dump() if attn_result.attention else None,
+                "graph": graph_result.graph.model_dump() if graph_result.graph else None,
+            },
+            "explanation_text": attn_formatted,
         }
 
     def _format_response(self, response: SimilarityResponse, query: str) -> str:
@@ -76,6 +90,7 @@ class EventSimilarityAgent:
         impact_response: str,
         forecast_response: str,
         report_response: str,
+        explanation_text: str = "",
     ) -> str:
         similar = similarity_data.get("similar_events", []) if similarity_data else []
         outcomes = similarity_data.get("aggregated_outcomes", {}) if similarity_data else {}
@@ -118,6 +133,12 @@ class EventSimilarityAgent:
             lines.append("### Market Forecast")
             lines.append("")
             lines.append(forecast_response[:500])
+            lines.append("")
+
+        if explanation_text:
+            lines.append("### Explainable Intelligence")
+            lines.append("")
+            lines.append(explanation_text)
             lines.append("")
 
         lines.append("### Summary")
