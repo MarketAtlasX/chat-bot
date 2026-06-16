@@ -3,12 +3,16 @@ from typing import Any
 from ..llm.ollama import get_llm
 from ..rag.retriever import retrieve_context
 from ..knowledge.neo4j_client import Neo4jClient
+from ..explain.shap_explainer import SHAPExplainer
+from ..explain.graph_explainer import GraphExplainer
 
 
 class ImpactAgent:
     def __init__(self):
         self.llm = get_llm()
         self.neo4j = Neo4jClient()
+        self.shap = SHAPExplainer()
+        self.graph_explainer = GraphExplainer()
 
     def process(self, query: str, context: dict[str, Any] = None) -> dict[str, Any]:
         knowledge = retrieve_context(query, limit=5)
@@ -42,12 +46,23 @@ Provide structured analysis:"""
             if gc:
                 graph_context += f"\nKnowledge graph relations for {entity}:\n{gc}"
 
+        ctx = context or {}
+        ctx.update({"query": query, "entities": entities})
+        shap_result = self.shap.explain(prediction=response[:100], context=ctx)
+        graph_result = self.graph_explainer.explain(prediction=response[:100], context=ctx)
+        shap_formatted = self.shap.format_explanation(shap_result)
+
         return {
             "agent": "ImpactAgent",
             "response": response,
             "composite_risk": self._calculate_risk(response),
             "entities": entities,
             "graph_context": graph_context,
+            "explanations": {
+                "shap": shap_result.shap.model_dump() if shap_result.shap else None,
+                "graph": graph_result.graph.model_dump() if graph_result.graph else None,
+            },
+            "explanation_text": shap_formatted,
         }
 
     def _extract_entities(self, text: str) -> list[str]:
