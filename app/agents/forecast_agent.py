@@ -2,11 +2,15 @@ import json
 from typing import Any
 from ..llm.ollama import get_llm
 from ..rag.retriever import retrieve_context
+from ..explain.shap_explainer import SHAPExplainer
+from ..explain.attention_explainer import AttentionExplainer
 
 
 class ForecastAgent:
     def __init__(self):
         self.llm = get_llm()
+        self.shap = SHAPExplainer()
+        self.attention = AttentionExplainer()
 
     def process(self, query: str, context: dict[str, Any] = None) -> dict[str, Any]:
         knowledge = retrieve_context(query, limit=4)
@@ -30,10 +34,21 @@ Provide the forecast:"""
 
         response = self.llm.generate(prompt, system_prompt=system_prompt)
 
+        ctx = context or {}
+        ctx.update({"query": query})
+        shap_result = self.shap.explain(prediction=response[:100], context=ctx)
+        attn_result = self.attention.explain(prediction=response[:100], context=ctx)
+        shap_formatted = self.shap.format_explanation(shap_result)
+
         return {
             "agent": "ForecastAgent",
             "response": response,
             "forecast_data": self._extract_forecast_data(response),
+            "explanations": {
+                "shap": shap_result.shap.model_dump() if shap_result.shap else None,
+                "attention": attn_result.attention.model_dump() if attn_result.attention else None,
+            },
+            "explanation_text": shap_formatted,
         }
 
     def _extract_forecast_data(self, text: str) -> dict[str, Any]:
