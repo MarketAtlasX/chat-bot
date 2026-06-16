@@ -9,6 +9,8 @@ class BaseExplainer(ABC):
         ...
 
     def format_explanation(self, result: ExplanationResult) -> str:
+        if not result or (not result.shap and not result.attention and not result.graph):
+            return ""
         lines = []
         if result.shap:
             lines.append("### SHAP Feature Attribution")
