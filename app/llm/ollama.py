@@ -11,7 +11,7 @@ class MockLLM(LLMInterface):
         query = prompt.split("Query: ")[-1].split("\n")[0].strip() if "Query: " in prompt else prompt[:100]
 
         if "classify" in prompt.lower() or "category" in prompt.lower():
-            categories = ["NEWS", "MARKET", "IMPACT", "RECOMMENDATION", "SIMULATION", "GRAPH", "REPORT"]
+            categories = ["NEWS", "MARKET", "IMPACT", "RECOMMENDATION", "SIMULATION", "GRAPH", "REPORT", "SIMILARITY"]
             keywords = {
                 "oil": "IMPACT", "sanction": "NEWS", "buy": "RECOMMENDATION", "sell": "RECOMMENDATION",
                 "invest": "RECOMMENDATION", "simulate": "SIMULATION", "what if": "SIMULATION",
@@ -26,13 +26,42 @@ class MockLLM(LLMInterface):
             return random.choice(categories)
 
         if "Extract" in prompt or "JSON" in prompt:
-            if "Extract geopolitical entities" in prompt or "Extract all named entities" in prompt:
+            if "Extract" in prompt and ("entities" in prompt.lower() or "geopolitical" in prompt.lower() or "sector" in prompt.lower()):
+                if "sector" in prompt.lower() and "Extract the affected market sectors" in prompt:
+                    sector_keywords_found = []
+                    if "oil" in query.lower() or "energy" in query.lower():
+                        sector_keywords_found.append("Energy")
+                    if "defense" in query.lower() or "military" in query.lower() or "weapon" in query.lower():
+                        sector_keywords_found.append("Defense")
+                    if "tech" in query.lower() or "semiconductor" in query.lower() or "chip" in query.lower() or "cyber" in query.lower():
+                        sector_keywords_found.append("Technology")
+                    if "bank" in query.lower() or "finance" in query.lower() or "financial" in query.lower() or "insurance" in query.lower():
+                        sector_keywords_found.append("Financials")
+                    if "shipping" in query.lower() or "port" in query.lower() or "supply chain" in query.lower():
+                        sector_keywords_found.append("Shipping")
+                    if "airline" in query.lower() or "aviation" in query.lower() or "travel" in query.lower():
+                        sector_keywords_found.append("Airlines")
+                    if "agriculture" in query.lower() or "wheat" in query.lower() or "grain" in query.lower() or "food" in query.lower():
+                        sector_keywords_found.append("Agriculture")
+                    if not sector_keywords_found:
+                        sector_keywords_found = ["Energy", "Defense"]
+                    return json.dumps(list(set(sector_keywords_found[:5])))
                 entities = []
                 for word in query.split():
-                    if word[0].isupper() and len(word) > 2:
-                        entities.append(word.strip(".,;:!?"))
+                    w = word.strip(".,;:!?()")
+                    if w[0].isupper() and len(w) > 2 and w.lower() not in ["the", "this", "what", "how", "why", "when", "where", "which", "that", "are", "have", "been"]:
+                        entities.append(w)
+                known_entities = {
+                    "iran": "Iran", "israel": "Israel", "russia": "Russia", "ukraine": "Ukraine",
+                    "china": "China", "taiwan": "Taiwan", "us": "United States", "usa": "United States",
+                    "middle east": "Middle East", "europe": "Europe", "nato": "NATO",
+                }
+                ql = query.lower()
+                for kw, val in known_entities.items():
+                    if kw in ql and val not in entities:
+                        entities.append(val)
                 if not entities:
-                    entities = ["Iran", "Oil", "Energy"] if "oil" in query.lower() else ["Russia", "Europe", "Gas"]
+                    entities = ["Iran", "Middle East"] if "iran" in ql or "middle east" in ql else ["Russia", "Ukraine"] if "russia" in ql or "ukraine" in ql else ["United States", "China"]
                 return json.dumps(list(set(entities[:5])))
             if "stock tickers" in prompt:
                 tickers = []
@@ -47,6 +76,10 @@ class MockLLM(LLMInterface):
         return self._mock_response(query, system_prompt, prompt)
 
     def _mock_response(self, query: str, system_prompt: Optional[str] = None, full_prompt: str = "") -> str:
+        if "classify" in full_prompt.lower() and "SIMILARITY" in full_prompt:
+            keywords = ["similar", "historical", "parallel", "analogous", "resemble", "past events like", "what past event", "similar events"]
+            if any(kw in query.lower() for kw in keywords):
+                return "SIMILARITY"
         if "simulate" in query.lower() or "what if" in query.lower() or "scenario" in query.lower():
             return json.dumps({
                 "scenario": f"Scenario: {query}",
