@@ -1,0 +1,20 @@
+server:
+  host: "0.0.0.0"
+  port: 8000
+  reload: false
+
+llm:
+  provider: "ollama"
+  model: "qwen2.5:7b"
+  base_url: "http://localhost:11434"
+
+databases:
+  postgres:
+    dsn: "postgresql+asyncpg://marketatlas:marketatlas@localhost:5432/marketatlas"
+  neo4j:
+    uri: "bolt://localhost:7687"
+    user: "neo4j"
+    password: "test"
+  qdrant:
+    url: "http://localhost:6333"
+    collection: "marketatlas_events"
