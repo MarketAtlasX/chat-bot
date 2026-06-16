@@ -47,7 +47,20 @@ async def health_redirect():
 
 @app.get("/api/v1")
 async def api_root():
-    return {"service": "MarketAtlas Chat API", "version": "1.0.0", "endpoints": ["/chat", "/chat/stream", "/health", "/history", "/memory/{id}", "/knowledge/search", "/graph/{entity}", "/events", "/events/{event_id}", "/events/similar"]}
+    return {"service": "MarketAtlas Chat API", "version": "1.0.0", "endpoints": [
+        "/chat", "/chat/stream", "/health", "/history", "/memory/{id}",
+        "/knowledge/search", "/graph/{entity}",
+        "/events", "/events/{event_id}", "/events/similar",
+        "/explain/shap", "/explain/attention", "/explain/graph",
+        "/countries", "/countries/{code}",
+        "/countries/{code}/relations/trade",
+        "/countries/{code}/relations/military",
+        "/countries/{code}/ports",
+        "/relations/trade", "/relations/military", "/ports",
+        "/market-prices/entity/{entity_id}/recent",
+        "/market-prices/entity/{entity_id}/latest",
+        "/analyze",
+    ]}
 
 
 @app.websocket("/ws")
