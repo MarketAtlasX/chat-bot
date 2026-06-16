@@ -3,12 +3,14 @@ from typing import Any
 from ..llm.ollama import get_llm
 from ..knowledge.neo4j_client import Neo4jClient
 from ..rag.retriever import retrieve_context
+from ..explain.graph_explainer import GraphExplainer
 
 
 class GraphAgent:
     def __init__(self):
         self.llm = get_llm()
         self.neo4j = Neo4jClient()
+        self.graph_explainer = GraphExplainer()
 
     def process(self, query: str, context: dict[str, Any] = None) -> dict[str, Any]:
         entities = self._extract_entities(query)
@@ -42,11 +44,20 @@ Explain the relationships and connections relevant to this query:"""
 
         response = self.llm.generate(prompt, system_prompt=system_prompt)
 
+        ctx = context or {}
+        ctx.update({"query": query, "entities": entities})
+        graph_result = self.graph_explainer.explain(prediction=response[:100], context=ctx)
+        graph_formatted = self.graph_explainer.format_explanation(graph_result)
+
         return {
             "agent": "GraphAgent",
             "response": response,
             "entities": entities,
             "relations_found": len(all_relations),
+            "explanations": {
+                "graph": graph_result.graph.model_dump() if graph_result.graph else None,
+            },
+            "explanation_text": graph_formatted,
         }
 
     def _extract_entities(self, text: str) -> list[str]:
