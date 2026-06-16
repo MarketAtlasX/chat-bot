@@ -11,6 +11,7 @@ class IntentType(str, Enum):
     SIMULATION = "SIMULATION"
     GRAPH = "GRAPH"
     REPORT = "REPORT"
+    SIMILARITY = "SIMILARITY"
 
 
 class Message(BaseModel):
