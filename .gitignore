@@ -9,3 +9,4 @@ server_error.log
 *.egg-info/
 dist/
 build/
+.cache/
