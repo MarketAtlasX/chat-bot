@@ -5,6 +5,7 @@ import numpy as np
 from typing import Any
 from ..llm.ollama import get_llm
 from ..rag.retriever import retrieve_context
+from ..explain.shap_explainer import SHAPExplainer
 
 MARKETATLAS_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 if str(MARKETATLAS_ROOT) not in sys.path:
@@ -16,6 +17,7 @@ from market_agents.market_data.market_data_agent import MarketDataAgent
 class MarketAgent:
     def __init__(self):
         self.llm = get_llm()
+        self.explainer = SHAPExplainer()
 
     def process(self, query: str, context: dict[str, Any] = None) -> dict[str, Any]:
         knowledge = retrieve_context(query, limit=3)
@@ -38,10 +40,19 @@ Provide market analysis addressing the query:"""
 
         response = self.llm.generate(prompt, system_prompt=system_prompt)
 
+        ctx = context or {}
+        ctx.update({"query": query, "market_data": market_data})
+        shap_result = self.explainer.explain(prediction=response[:100], context=ctx)
+        shap_formatted = self.explainer.format_explanation(shap_result)
+
         return {
             "agent": "MarketAgent",
             "response": response,
             "market_data": market_data,
+            "explanations": {
+                "shap": shap_result.shap.model_dump() if shap_result.shap else None,
+            },
+            "explanation_text": shap_formatted,
         }
 
     def _extract_tickers(self, text: str) -> list[str]:
