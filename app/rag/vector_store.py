@@ -1,7 +1,7 @@
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="qdrant_client")
 
-from typing import Optional, Any
+from typing import Any
 from ..config import settings
 from .embeddings import embedding_model
 

@@ -1,7 +1,6 @@
 import httpx
 import json
-import random
-from typing import Optional, Generator, List
+from typing import Optional, Generator
 from .base import LLMInterface
 from ..config import settings
 
@@ -74,7 +73,7 @@ class MockLLM(LLMInterface):
             lines = prompt.split("Query: ")
             if len(lines) > 1:
                 return lines[-1].split("\n")[0].strip()
-        lines = [l.strip() for l in prompt.split("\n") if l.strip() and not l.strip().startswith("Query:") and not l.strip().startswith("Category:") and not l.strip().startswith("Return")]
+        lines = [line.strip() for line in prompt.split("\n") if line.strip() and not line.strip().startswith("Query:") and not line.strip().startswith("Category:") and not line.strip().startswith("Return")]
         return lines[-1] if lines else prompt[:100]
 
     def _classify(self, query: str) -> str:
@@ -630,7 +629,7 @@ class OllamaLLM(LLMInterface):
                 resp = client.post("/api/generate", json=payload)
                 resp.raise_for_status()
                 return resp.json().get("response", "")
-        except Exception as e:
+        except Exception:
             mock = MockLLM()
             return mock.generate(prompt, system_prompt, temperature)
 

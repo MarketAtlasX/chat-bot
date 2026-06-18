@@ -1,6 +1,4 @@
-import json
 import uuid
-from datetime import datetime
 from typing import Any, Literal
 from langgraph.graph import StateGraph, END
 from ..models import IntentType, ChatResponse
@@ -18,7 +16,6 @@ from ..agents import (
     EventSimilarityAgent,
 )
 from ..memory.short_term import short_term_memory
-from ..memory.long_term import long_term_memory
 from ..rag.retriever import seed_knowledge_base
 
 
@@ -220,8 +217,6 @@ def execute_similarity_pipeline(state: AgentState) -> AgentState:
 
     forecast_result = forecast_agent.process(state["query"], state.get("_context"))
     state["agent_responses"]["ForecastAgent"] = forecast_result["response"]
-    forecast_expl = forecast_result.get("explanation_text", "")
-
     report_result = report_agent.process(state["query"], state.get("_context"))
     state["agent_responses"]["ReportAgent"] = report_result["response"]
     state["sources"].extend(report_result.get("sources", []))

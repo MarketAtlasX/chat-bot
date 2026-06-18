@@ -1,10 +1,9 @@
 import json
-import uuid
 import random
 from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from ..models import ChatRequest, ChatResponse, IntentType
+from ..models import ChatRequest, ChatResponse
 from ..workflow.graph import run_chat
 from ..memory.short_term import short_term_memory
 from ..rag.vector_store import search_knowledge
@@ -247,15 +246,15 @@ def _generate_market_data(entity_id: int) -> list[dict]:
         change = random.uniform(-5, 5)
         o = round(base_price + change, 2)
         h = round(o + random.uniform(0, 3), 2)
-        l = round(o - random.uniform(0, 3), 2)
-        c = round(random.uniform(l, h), 2)
+        low_price = round(o - random.uniform(0, 3), 2)
+        c = round(random.uniform(low_price, h), 2)
         v = random.randint(1000000, 50000000)
         data.append({
             "id": i + 1,
             "entity_id": entity_id,
             "open": o,
             "high": h,
-            "low": l,
+            "low": low_price,
             "close": c,
             "volume": v,
             "price_date": date,

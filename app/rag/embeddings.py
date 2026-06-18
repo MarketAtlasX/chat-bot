@@ -10,7 +10,7 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 os.environ["HF_HUB_OFFLINE"] = "1"
 
 import numpy as np
-from typing import List, Optional
+from typing import List
 
 
 class BGEMModel:

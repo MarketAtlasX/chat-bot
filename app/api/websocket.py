@@ -1,10 +1,8 @@
-import json
 import uuid
 import asyncio
 import random
 from fastapi import WebSocket, WebSocketDisconnect
 from ..workflow.graph import run_chat
-from ..memory.short_term import short_term_memory
 
 
 connected_clients: dict[str, WebSocket] = {}
@@ -19,7 +17,6 @@ async def _send_signal_updates(client_id: str, websocket: WebSocket):
         if "signals" not in channel_subscriptions or client_id not in channel_subscriptions["signals"]:
             continue
         try:
-            q = random.choice(["energy market analysis", "tech sector outlook", "defense spending impact", "safe haven demand", "market sentiment"])
             await websocket.send_json({
                 "type": "signal",
                 "channel": "signals",

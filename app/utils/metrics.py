@@ -1,5 +1,4 @@
 import numpy as np
-from typing import Optional
 
 
 def calculate_volatility(prices: list[float], periods: int = 21) -> float:

@@ -1,7 +1,6 @@
 import json
-from typing import Any, Optional
+from typing import Any
 from ..llm.ollama import get_llm
-from ..rag.retriever import retrieve_context
 from ..event_memory.event_store import event_store
 from ..event_memory.event_schema import SimilarityResponse
 from ..explain.attention_explainer import AttentionExplainer
@@ -48,7 +47,7 @@ class EventSimilarityAgent:
 
     def _format_response(self, response: SimilarityResponse, query: str) -> str:
         lines = []
-        lines.append(f"## Historical Event Similarity Analysis")
+        lines.append("## Historical Event Similarity Analysis")
         lines.append("")
         lines.append(f"**Query:** {query}")
         lines.append("")
@@ -96,7 +95,7 @@ class EventSimilarityAgent:
         outcomes = similarity_data.get("aggregated_outcomes", {}) if similarity_data else {}
 
         lines = []
-        lines.append(f"# MarketAtlas Intelligence Report")
+        lines.append("# MarketAtlas Intelligence Report")
         lines.append("")
         lines.append(f"## Query: {query}")
         lines.append("")

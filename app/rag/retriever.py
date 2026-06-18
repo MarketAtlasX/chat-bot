@@ -1,4 +1,3 @@
-from typing import Any
 from .vector_store import search_knowledge
 
 

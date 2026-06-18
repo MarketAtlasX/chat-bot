@@ -9,7 +9,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from app.config import settings as _
 from app.rag.embeddings import CACHE_DIR
 
 print(f"Downloading BGE-M3 model to: {CACHE_DIR}")
@@ -26,7 +25,7 @@ try:
 
     vec = model.encode(["test query"], normalize_embeddings=True)
     print(f"Test embedding dimension: {len(vec[0])}")
-    print(f"Model is ready for use.")
+    print("Model is ready for use.")
 except Exception as e:
     print(f"Error downloading model: {e}")
     print()

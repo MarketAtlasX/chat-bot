@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Any, Optional
+from typing import Any
 from .base import BaseExplainer
 from .models import AttentionExplanation, AttentionWeight, ExplanationResult
 

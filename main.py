@@ -41,7 +41,6 @@ async def root():
 
 @app.get("/health")
 async def health_redirect():
-    from app.api.routes import router as r
     return {"status": "ok", "service": "MarketAtlas Chat"}
 
 

@@ -1,6 +1,4 @@
-import json
-import re
-from typing import Any, Optional
+from typing import Any
 from .base import BaseExplainer
 from .models import GraphExplanation, GraphPathStep, ExplanationResult
 from ..knowledge.neo4j_client import Neo4jClient
