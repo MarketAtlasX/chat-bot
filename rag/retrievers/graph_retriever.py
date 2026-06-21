@@ -243,6 +243,23 @@ class GraphRetriever(BaseRetriever):
                     },
                 )
             )
+    def get_graph_summary(self) -> dict:
+        entities = list(DEFAULT_GRAPH_DATA.keys())
+        total_relations = sum(len(v["relationships"]) for v in DEFAULT_GRAPH_DATA.values() if isinstance(v, dict))
+        sectors = set()
+        for v in DEFAULT_GRAPH_DATA.values():
+            if isinstance(v, dict):
+                for rel in v.get("relationships", []):
+                    if isinstance(rel, (list, tuple)) and len(rel) >= 3:
+                        sectors.add(rel[2])
+        return {
+            "entities": entities,
+            "total_entities": len(entities),
+            "total_relations": total_relations,
+            "sectors": list(sectors),
+            "neo4j_available": self._neo4j_driver is not None,
+        }
+
         if self._neo4j_driver:
             try:
                 with self._neo4j_driver.session() as session:
