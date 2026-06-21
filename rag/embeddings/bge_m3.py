@@ -57,8 +57,12 @@ class BGEMModel:
 _model_instance: Optional[BGEMModel] = None
 
 
-def get_embedding_model() -> BGEMModel:
+def get_embedding_model(force_reload: bool = False) -> BGEMModel:
     global _model_instance
-    if _model_instance is None:
+    if _model_instance is None or force_reload:
         _model_instance = BGEMModel()
     return _model_instance
+
+
+def get_available_models() -> list:
+    return ["BAAI/bge-m3", "BAAI/bge-small-en-v1.5", "all-MiniLM-L6-v2"]
