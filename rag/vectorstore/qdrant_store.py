@@ -164,6 +164,31 @@ class QdrantVectorStore:
             logger.error(f"Failed to list collections: {e}")
             return []
 
+    def count(self) -> int:
+        if not self._available:
+            return 0
+        try:
+            result = self._client.count(collection_name=self.collection)
+            return result.count
+        except Exception as e:
+            logger.error(f"Qdrant count failed: {e}")
+            return 0
+
+    def get_collection_info(self) -> dict:
+        if not self._available:
+            return {"available": False}
+        try:
+            info = self._client.get_collection(collection_name=self.collection)
+            return {
+                "name": self.collection,
+                "status": str(info.status),
+                "vectors_count": info.vectors_count,
+                "points_count": info.points_count,
+                "available": True,
+            }
+        except Exception as e:
+            return {"name": self.collection, "error": str(e), "available": False}
+
 
 _store_instance: Optional[Tuple[str, QdrantVectorStore]] = None
 
