@@ -260,6 +260,18 @@ class HistoricalRetriever(BaseRetriever):
     def get_all_events(self) -> List[dict]:
         return HISTORICAL_EVENTS
 
+    def get_events_by_sector(self, sector: str) -> List[dict]:
+        sector_lower = sector.lower()
+        return [e for e in HISTORICAL_EVENTS if sector_lower in [s.lower() for s in e.get("sectors", [])]]
+
+    def get_events_by_region(self, region: str) -> List[dict]:
+        region_lower = region.lower()
+        return [e for e in HISTORICAL_EVENTS if region_lower in [r.lower() for r in e.get("regions", [])]]
+
+    def get_events_by_entity(self, entity: str) -> List[dict]:
+        entity_lower = entity.lower()
+        return [e for e in HISTORICAL_EVENTS if any(entity_lower in ent.lower() for ent in e.get("entities", []))]
+
     def search_events(self, query: str, limit: int = 5) -> List[dict]:
         query_lower = query.lower()
         scored = []
