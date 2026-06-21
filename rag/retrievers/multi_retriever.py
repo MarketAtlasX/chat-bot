@@ -57,3 +57,16 @@ class MultiRetriever:
             results=completed,
             all_results=all_results,
         )
+
+    async def retrieve_filtered(
+        self,
+        query: str,
+        include_types: List[RetrieverType],
+        limit_per_source: int = 5,
+        score_threshold: Optional[float] = None,
+    ) -> MultiRetrievalResult:
+        return await self.retrieve_all(
+            query=query,
+            limit_per_source=limit_per_source,
+            include_types=include_types,
+        )
