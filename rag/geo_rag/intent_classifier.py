@@ -99,7 +99,16 @@ ENTITY_KEYWORDS = {
 
 class GeoIntentClassifier:
     def __init__(self):
-        pass
+        self._cache = {}
+
+    def get_intent_labels(self) -> dict:
+        return {intent.value: intent.name for intent in GeoIntent}
+
+    def get_supported_sectors(self) -> list:
+        return list(SECTOR_KEYWORDS.keys())
+
+    def get_supported_regions(self) -> list:
+        return list(REGION_KEYWORDS.keys())
 
     def classify(self, query: str) -> IntentResult:
         query_lower = query.lower().strip()
