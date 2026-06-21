@@ -87,6 +87,18 @@ class GeoContextBuilder:
             lines.append(f"    {content}")
         return "\n".join(lines)
 
+    def build_minimal(self, query: str, source: str, results: list) -> str:
+        header = f"=== {source} ===\n"
+        items = []
+        for i, r in enumerate(results[:3], 1):
+            title = r.get("title") or r.get("name") or f"Result {i}"
+            content = str(r.get("content", r.get("description", "")))[:200]
+            items.append(f"[{i}] {title}\n    {content}")
+        return header + "\n".join(items) if items else ""
+
+    def count_tokens(self, text: str) -> int:
+        return len(text) // 4
+
     def _truncate(self, text: str, max_chars: int) -> str:
         if len(text) <= max_chars:
             return text
