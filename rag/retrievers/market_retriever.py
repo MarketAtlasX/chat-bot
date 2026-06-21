@@ -94,6 +94,22 @@ MARKET_REACTIONS = [
 ]
 
 
+def seed_market_reactions(collection: str = "marketatlas_market"):
+    from rag.embeddings import get_embedding_model
+    from rag.vectorstore import get_vector_store
+    embedder = get_embedding_model()
+    store = get_vector_store(collection)
+    texts = []
+    metadatas = []
+    for reaction in MARKET_REACTIONS:
+        text = f"Event: {reaction['event']}\nAsset: {reaction['asset']}\nReaction: {reaction['reaction']}\nImpact: {reaction['impact']}\nSector: {reaction['sector']}\nRecovery: {reaction['recovery']}"
+        texts.append(text)
+        metadatas.append(reaction)
+    vectors = embedder.embed(texts)
+    store.add(texts, vectors, metadatas)
+    return len(texts)
+
+
 class MarketRetriever(BaseRetriever):
     def __init__(self, collection: str = "marketatlas_market"):
         super().__init__(name="market_retriever", retriever_type=RetrieverType.MARKET)
