@@ -111,6 +111,12 @@ class GraphPathExtractor:
             lines.append(f"   Entities: {', '.join(path.entities)}")
         return "\n".join(lines)
 
+    def filter_paths_by_sector(self, paths: List[GraphPath], sector: str) -> List[GraphPath]:
+        return [p for p in paths if sector in p.sectors]
+
+    def filter_paths_by_entity(self, paths: List[GraphPath], entity: str) -> List[GraphPath]:
+        return [p for p in paths if entity in p.entities]
+
     def paths_to_context(self, paths: List[GraphPath]) -> str:
         if not paths:
             return ""
